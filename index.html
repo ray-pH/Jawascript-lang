@@ -6,20 +6,43 @@
     <meta charset="utf-8" />
     <title>Jawa</title>
     <script type="module" src="main.js"></script>
+    <script src="jawa/interpreter.js"></script>
     <link rel="stylesheet" href="font/noto-javanese.css" type="text/css" charset="utf-8" />
 </head>
 
 <body>
     <div align="center">
         <textarea class="input" id="input" rows="5" cols="50" style="padding:10px"></textarea>
-    </div>
+    </div><br>
+    <div class="buttondiv">
+        <button type="button" class="button" onclick="runButton()">Run</button>
+    </div><br>
+    <div align="left" id="output" class="output"> </div>
 </body>
 
+<script>
+    function runButton(){
+        var input  = document.getElementById("input");
+        var output = document.getElementById("output");
+        output.innerHTML = runCode(input.value).replace(/(\r\n|\r|\n)/g, "<br>");
+    }
+</script>
+
 <style>
-.input{
-    font-size:24px;
-    font-family: 'Noto Sans Javanese';
-}
+    .input{
+        font-size:24px;
+        font-family: 'Noto Sans Javanese';
+    }
+    .output{
+        font-size:24px;
+        margin-left: 200px;
+    }
+    .buttondiv{
+        margin-left: 200px;
+    }
+    .button{
+        
+    }
 </style>
 
 </html>
