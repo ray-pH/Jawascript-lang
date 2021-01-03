@@ -49,11 +49,14 @@ function angka_to_number(input){
 function parseLine(line){
     
     // variable declaration
-    if( (/^ꦮꦺꦴꦤ꧀ꦠꦼꦤ꧀.*꧈ꦤꦶꦏꦸ/g).test(line) ){  
-        var expr = line.substr(9).split("꧈");
-        var name = expr[0];
+    if ((/^(ꦮꦺꦴꦤ꧀ꦠꦼꦤ꧀|ꦲꦤ).*꧈(ꦤꦶꦏꦸ|ꦲꦶꦏꦸ)/g).test(line)) {
+        var declength = 0;
+        if ((/^ꦮꦺꦴꦤ꧀ꦠꦼꦤ꧀/g).test(line)) { declength = 9;
+        }else{ declength = 2; }
+        var expr = line.substr(declength).split("꧈");
+        var name = expr[0].replace(/\s/g, "");
         var type = "";
-        switch (expr[1].substr(4)){
+        switch (expr[1].substr(4)){ //both work
             case "ꦮꦶꦭꦔꦤ꧀":
                 type = dataType.NUMBER;
                 break;
@@ -65,9 +68,12 @@ function parseLine(line){
     } 
 
     // variable initialization or set by value
-    else if ( (/^ꦒꦤ꧀ꦠꦶ.+ꦢꦢꦶ/g).test(line) ) {
-        var expr  = line.substr(5).split("ꦢꦢꦶ");
-        var name  = expr[0];
+    else if ( (/^(ꦒꦤ꧀ꦠꦶ|ꦒꦤ꧀ꦠꦺꦴꦱ꧀).+ꦢꦢꦶ/g).test(line) ) {
+        var initlength = 0;
+        if ((/^ꦒꦤ꧀ꦠꦶ/g).test(line)) { initlength = 5;
+        }else{ initlength = 8; }
+        var expr  = line.substr(initlength).split("ꦢꦢꦶ");
+        var name  = expr[0].replace(/\s/g, "");
         var value = expr[1];
         return  [opType.VAR_SET, name, value];
     }
@@ -75,7 +81,7 @@ function parseLine(line){
     // do operation on variable
     else if ( (/^ꦒꦤ꧀ꦠꦶ.+꧈/g).test(line) ) {
         var expr      = line.substr(5).split("꧈");
-        var name      = expr[0];
+        var name      = expr[0].replace(/\s/g, "");
         var tooperate = expr[1];
         var operation;  var operand;
         if ((/^ꦠꦩ꧀ꦧꦃ/g).test(tooperate)){ //add
@@ -86,7 +92,7 @@ function parseLine(line){
             operation = varOpType.SUB;
             operand   = tooperate.substr(5);
         }
-        return  [opType.VAR_OPERATE, name, operation, operand];
+        return  [opType.VAR_OPERATE, name, [operation, operand]];
     }
 
     else if ( (/^ꦠꦸꦭꦶꦱ꧀/g).test(line) ) {
@@ -94,8 +100,12 @@ function parseLine(line){
         return  [opType.VAR_PRINT, name, ""];
     }
 
+    else if ( (/^ꦒꦫꦶꦱ꧀ꦲꦚꦂ$/g).test(line) ) {
+        return [opType.VAR_PRINT, "newline"];
+    }
+
     else {
-        throw "error, cannot parse ".concat(line);
+        throw "cannot parse " + line;
     }
 };
 
@@ -124,15 +134,65 @@ function evalParsed(expr){
                 var str = value.substr(1, value.length-2);
                 variables[name] = [type, str];
             }
-            break;        
+            break;
+
+        case opType.VAR_OPERATE :
+            var initial_variable = variables[name];
+            var initial_value    = initial_variable[1];
+            var variable_type    = initial_variable[0];
+            if (initial_variable == undefined){
+                throw "error undefined variable : " + name;
+            }
+
+            var operation = value[0];
+            var operand   = value[1];
+            var operand_val;
+            if ((/^꧇.+꧇$/g).test(operand)){
+                operand_val = angka_to_number(operand.substr(1,operand.length-2));
+            }else{
+                var operand_variable = variables[operand];
+                if (operand_variable == undefined){
+                    throw "undefined variable : " + operand;
+                }
+                operand_val = operand_variable[1];
+            }
+            var operation_result = 0;
+            switch (operation){
+                case varOpType.ADD:
+                    if (variable_type == dataType.NUMBER){
+                       operation_result = Number(initial_value) 
+                                        + Number(operand_val);
+                    }else if (variable_type == dataType.STRING){
+                       operation_result = initial_value 
+                                        + operand_val;
+                    }else{
+                        throw "undefined variable type : " + variable_type;
+                    }
+                    break;
+                case varOpType.SUB:
+                    operation_result = initial_value - operand_val;
+                    break;
+                default:
+                    throw "undefined operand : " + operation;
+                    break;
+            }
+            variables[name] = [variable_type, operation_result]
+            break;
 
         case opType.VAR_PRINT :
-            var variable = variables[name];
-            output = output.concat(variable[1]);
+            if (name == "newline"){
+                output = output + "\n";
+            }
+            else if ( (/^꧊.+꧊$/g).test(name)){
+                output = output + name.substr(1,name.length-2);
+            }else{
+                var variable = variables[name];
+                output = output + variable[1];
+            }
             break;
 
         default:
-            throw "error, cannot evaluate ".concat(op);
+            throw "cannot evaluate " + op;
     }
 }
 

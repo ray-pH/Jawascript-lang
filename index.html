@@ -4,20 +4,27 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>Jawa</title>
+    <title>Jawascript : ꦗꦮꦱ꧀ꦏꦿꦶꦥ꧀</title>
     <script type="module" src="main.js"></script>
     <script src="jawa/interpreter.js"></script>
     <link rel="stylesheet" href="font/noto-javanese.css" type="text/css" charset="utf-8" />
 </head>
 
 <body>
-    <div align="center">
-        <textarea class="input" id="input" rows="5" cols="50" style="padding:10px"></textarea>
-    </div><br>
-    <div class="buttondiv">
-        <button type="button" class="button" onclick="runButton()">Run</button>
-    </div><br>
-    <div align="left" id="output" class="output"> </div>
+    <div id="container">
+        <div class="top-bar">
+            <img src="./icon/favicon-96x96.png" width="64"
+            style="border-radius: 10%; vertical-align: middle;" />
+            ꦗꦮꦱ꧀ꦏꦿꦶꦥ꧀
+        </div>
+        <div align="center">
+            <textarea class="input" id="input" rows="5" style="padding:10px"></textarea>
+        </div><br>
+        <div class="buttondiv">
+            <button type="button" class="button" onclick="runButton()">Run</button>
+        </div><br>
+        <div align="left" id="output" class="output"> </div>
+    </div>
 </body>
 
 <script>
@@ -29,16 +36,28 @@
 </script>
 
 <style>
+    #container{
+        margin: auto;
+        width : 80%;
+    }
+    .top-bar{
+        font-family: 'Noto Sans Javanese';
+        font-size: 30px;
+        margin-top: 15px;
+        margin-bottom: 15px;
+        /*margin-left : 100px;*/
+    }
     .input{
         font-size:24px;
         font-family: 'Noto Sans Javanese';
+        width : 100%;
     }
     .output{
         font-size:24px;
-        margin-left: 200px;
+        /*margin-left: 100px;*/
     }
     .buttondiv{
-        margin-left: 200px;
+        /*margin-left: 100px;/*/
     }
     .button{
         

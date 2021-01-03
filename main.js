@@ -13,7 +13,9 @@ document.addEventListener('DOMContentLoaded', function() {
     var input  = document.getElementById("input");
     input.addEventListener("keyup", function(event){
     	var position = input.selectionStart;
+    	var l0 = input.value.length;
     	input.value = aksara_convert(input.value);
-    	input.selectionEnd = position;
+    	var l1 = input.value.length;
+    	input.selectionEnd = position + l1 - l0;
     });
 }, false);
