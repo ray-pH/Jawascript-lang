@@ -3,10 +3,18 @@ var blocks    = {};
 var output    = "";
 
 const dataType = {
-    NUMBER : "number",
-    STRING : "string"
+    NUMBER    : "number",
+    STRING    : "string",
+    STATEMENT : "statement"
     // NUMBER : "ꦮꦶꦭꦔꦤ꧀",
     // STRING : "ꦠꦸꦭꦶꦱꦤ꧀"
+}
+
+const compType = {
+    GREATER : "greater than",
+    LESS    : "less than",
+    EQUAL   : "equal to",
+    NOT     : "is not"
 }
 
 const opType = {
@@ -46,6 +54,13 @@ function angka_to_number(input){
 }
 
 
+function isNumber(str){
+    return (/^꧇.+꧇$/g).test(str);
+}
+function isString(str){
+    return (/^꧊.*꧊$/g).test(str);
+}
+
 function parseLine(line){
     
     // variable declaration
@@ -62,6 +77,9 @@ function parseLine(line){
                 break;
             case "ꦠꦸꦭꦶꦱꦤ꧀":
                 type = dataType.STRING;
+                break;
+            case "ꦏꦠꦿꦔꦤ꧀":
+                type = dataType.STATEMENT;
                 break;
         }
         return [opType.VAR_DECLARE,name,type];
@@ -100,7 +118,7 @@ function parseLine(line){
         return  [opType.VAR_PRINT, name, ""];
     }
 
-    else if ( (/^ꦒꦫꦶꦱ꧀ꦲꦚꦂ$/g).test(line) ) {
+    else if ( (/^(ꦒ|ꦧ)ꦫꦶꦱ꧀ꦲꦚꦂ$/g).test(line) ) {
         return [opType.VAR_PRINT, "newline"];
     }
 
@@ -108,6 +126,60 @@ function parseLine(line){
         throw "cannot parse " + line;
     }
 };
+
+function evalStatement(varname){
+    var state = undefined;
+    var variable = variables[varname];
+    var t1,t2,v1,v2;
+    var v1n = variable[1];
+    var v2n = variable[3];
+    var comp_type = variable[2];
+
+    if (comp_type == compType.NOT) {
+        return !(evalStatement(variable[3]));
+    }
+
+    if (isNumber(v1n)) { 
+        t1 = dataType.NUMBER; 
+        v1 = Number(v1n);
+    }
+    else if (isString(v1n)) { 
+        t1 = dataType.STRING; 
+        v1 = v1n;
+    }
+    else { 
+        t1 = variables[v1n][0];
+        v1 = variables[v1n][1];
+    }
+    if (isNumber(v2n)) { 
+        t2 = dataType.NUMBER; 
+        v2 = Number(v2n);
+    }
+    else if (isString(v2n)) { 
+        t2 = dataType.STRING; 
+        v2 = v2n;
+    }
+    else { 
+        t2 = variables[v2n][0];
+        v2 = variables[v2n][1];
+    }
+
+    if (t1 != t2){
+        throw "comparison of different types";
+    }
+
+    if (comp_type == compType.GREATER){
+        state = v1 > v2;
+    }
+    else if (comp_type == compType.LESS){
+        state = v1 < v2;
+    }
+    else if (comp_type == compType.EQUAL){
+        state = v1 == v2;
+    }
+
+    return state;
+}
 
 function evalParsed(expr){
     var op    = expr[0];
@@ -120,6 +192,8 @@ function evalParsed(expr){
                 variables[name] = [dataType.NUMBER, 0];
             }else if (value == dataType.STRING){
                 variables[name] = [dataType.STRING, ""];
+            }else if (value == dataType.STATEMENT){
+                variables[name] = [dataType.STATEMENT, "", compType.EQUAL, ""];
             }
             break;
 
@@ -133,6 +207,31 @@ function evalParsed(expr){
             }else if (type == dataType.STRING){
                 var str = value.substr(1, value.length-2);
                 variables[name] = [type, str];
+            }else if (type == dataType.STATEMENT){
+                // var bool = value=="ꦧꦼꦤꦼꦂ";
+                var comparison = compType.EQUAL;
+                var to_compare;
+                if ( (/.+ꦭꦸꦮꦶꦃꦱꦏ.+/g).test(value) ){
+                    comparison = compType.GREATER;
+                    to_compare = value.split("ꦭꦸꦮꦶꦃꦱꦏ");
+                }
+                else if ( (/.+ꦏꦸꦫꦁꦱꦏ.+/g).test(value) ){
+                    comparison = compType.LESS;
+                    to_compare = value.split("ꦏꦸꦫꦁꦱꦏ");
+                }
+                else if ( (/.+ꦥꦝꦏꦫꦺꦴ.+/g).test(value) ){
+                    comparison = compType.GREATER;
+                    to_compare = value.split("ꦥꦝꦏꦫꦺꦴ");
+                }
+                else if ( (/.+ꦲꦺꦴꦫ.+/g).test(value) ){
+                    comparison = compType.GREATER;
+                    to_compare = value.split("ꦲꦺꦴꦫ");
+                }
+                else {
+                    throw "unknown comparison type in " + value;
+                }
+                variables[name] = [type, to_compare[0], 
+                                   comparison, to_compare[1]];
             }
             break;
 
@@ -147,7 +246,7 @@ function evalParsed(expr){
             var operation = value[0];
             var operand   = value[1];
             var operand_val;
-            if ((/^꧇.+꧇$/g).test(operand)){
+            if ( isNumber(operand)){
                 operand_val = angka_to_number(operand.substr(1,operand.length-2));
             }else{
                 var operand_variable = variables[operand];
@@ -183,16 +282,20 @@ function evalParsed(expr){
             if (name == "newline"){
                 output = output + "\n";
             }
-            else if ( (/^꧊.+꧊$/g).test(name)){
+            else if ( isString(name)){
                 output = output + name.substr(1,name.length-2);
             }else{
                 var variable = variables[name];
-                output = output + variable[1];
+                if (variable[0] == dataType.STATEMENT){
+                    output = output + evalStatement(name);
+                }else{
+                    output = output + variable[1];
+                }
             }
             break;
 
         default:
-            throw "cannot evaluate " + op;
+            throw "cannot evaluate "+op;
     }
 }
 
@@ -211,7 +314,6 @@ function interpret(input){
     }catch (err) {
         throw "on line " +String(Number(i)+1)+" : "+err;
     }
-
 
     console.log(raw);      //debug purposes
     console.log(parsed);
