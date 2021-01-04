@@ -35,7 +35,7 @@
             </div>
             <div class=right-button>
                 <button type="button" class="rightbutton" onclick="saveFile()">Save</button>
-                <button type="button" class="rightbutton" id="btnAttachment" onclick="openAttachment()">Load</button>
+                <button type="button" class="rightbutton" id="btnAttachment" onclick="loadFile()">Load</button>
                 <button type="button" class="rightbutton" onclick="helpEdit()">Help</button>
             </div>
         </div><br><br><br>
@@ -76,7 +76,7 @@
         download('filename.jj', document.getElementById("input").value+"\n");
     }
 
-    function openAttachment() {
+    function loadFile() {
         document.getElementById('attachment').click();
     }
 
