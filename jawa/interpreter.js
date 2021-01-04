@@ -23,7 +23,8 @@ const opType = {
     VAR_OPERATE : "Operate on variable",
     VAR_PRINT   : "Print value of variable",
     LOOP_START  : "Beginning of a loop",
-    LOOP_END    : "End of a loop"
+    LOOP_END    : "End of a loop",
+    LOOP_BREAK  : "Break out of loop"
 }
 
 const varOpType = {
@@ -42,14 +43,24 @@ const angka = [
     ["9", "꧙"]
 ];
 var angka_to_number_regex = [];
+var number_to_angka_regex = [];
 for (var i in angka){
     var a = angka[i];
     angka_to_number_regex.push([RegExp( a[1], "g" ),a[0]]);
+    number_to_angka_regex.push([RegExp( a[0], "g" ),a[1]]);
 }
 function angka_to_number(input){
     var res = input;
     for (var i in angka_to_number_regex){
         var pair = angka_to_number_regex[i];
+        res = res.replace(pair[0],pair[1]);
+    }
+    return res;
+}
+function number_to_angka(input){
+    var res = input;
+    for (var i in number_to_angka_regex){
+        var pair = number_to_angka_regex[i];
         res = res.replace(pair[0],pair[1]);
     }
     return res;
@@ -112,9 +123,21 @@ function parseLine(line){
             operation = varOpType.SUB;
             operand   = tooperate.substr(5);
         }
-        else if ((/^ꦥꦝꦏ꧀ꦏꦺ/g).test(tooperate)){ //sub
+        else if ((/^ꦥꦝꦏ꧀ꦏꦺ/g).test(tooperate)){ //set
             operation = varOpType.SET;
             operand   = tooperate.substr(6);
+        }
+        else if ((/^ꦥꦶꦁ/g).test(tooperate)){ //sub
+            operation = varOpType.MUL;
+            operand   = tooperate.substr(3);
+        }
+        else if ((/^ꦥꦫ/g).test(tooperate)){ //sub
+            operation = varOpType.DIV;
+            operand   = tooperate.substr(2);
+        }
+        else if ((/^ꦠꦸꦫꦲꦺꦪꦺꦤ꧀ꦢꦶꦥꦫ/g).test(tooperate)){ //modulo
+            operation = varOpType.MOD;
+            operand   = tooperate.substr(13);
         }
         return  [opType.VAR_OPERATE, name, [operation, operand]];
     }
@@ -135,6 +158,10 @@ function parseLine(line){
 
     else if ( (/^ꦢꦶꦭꦏꦺꦴ(ꦏ꧀ꦲꦏꦺ|ꦏ꧀ꦏꦺ|ꦤꦶ)$/g).test(line) ){
         return [opType.LOOP_END];
+    }
+
+    else if ( (/^ꦫꦩ꧀ꦥꦸꦁ$/g).test(line) ){
+        return [opType.LOOP_BREAK];
     }
 
     else {
@@ -237,10 +264,16 @@ function evalInstruction(expr, variables, loops, pointer, instructions, output){
             var variable = variables[name];
             var type = variable[0];
             if (type == dataType.NUMBER){
+                if(!isNumber(value)){
+                    throw "data type not matching of "+values+" and "+name;
+                }
                 var angka = value.substr(1, value.length-2);
                 var num   = Number(angka_to_number(angka));
                 variables[name] = [type, num];
             }else if (type == dataType.STRING){
+                if(!isString(value)){
+                    throw "data type not matching of "+values+" and "+name;
+                }
                 var str = value.substr(1, value.length-2);
                 variables[name] = [type, str];
             }else if (type == dataType.STATEMENT){
@@ -256,11 +289,11 @@ function evalInstruction(expr, variables, loops, pointer, instructions, output){
                     to_compare = value.split("ꦏꦸꦫꦁꦱꦏ");
                 }
                 else if ( (/.+ꦥꦝꦏꦫꦺꦴ.+/g).test(value) ){
-                    comparison = compType.GREATER;
+                    comparison = compType.EQUAL;
                     to_compare = value.split("ꦥꦝꦏꦫꦺꦴ");
                 }
                 else if ( (/.+ꦲꦺꦴꦫ.+/g).test(value) ){
-                    comparison = compType.GREATER;
+                    comparison = compType.NOT;
                     to_compare = value.split("ꦲꦺꦴꦫ");
                 }
                 else {
@@ -307,13 +340,31 @@ function evalInstruction(expr, variables, loops, pointer, instructions, output){
                     operation_result = initial_value - operand_val;
                     break;
                 case varOpType.SET:
-                    operation_result = operand_val;
+                    if (variable_type == dataType.STATEMENT){
+                        variables[name] = [variable_type,
+                                            operand_variable[1],
+                                            operand_variable[2],
+                                            operand_variable[3]];
+                    }else{
+                        operation_result = operand_val;
+                    }
+                    break;
+                case varOpType.MUL:
+                    operation_result = initial_value * operand_val;
+                    break;
+                case varOpType.DIV:
+                    operation_result = initial_value / operand_val;
+                    break;
+                case varOpType.MOD:
+                    operation_result = initial_value % operand_val;
                     break;
                 default:
                     throw "undefined operand : " + operation;
                     break;
             }
-            variables[name] = [variable_type, operation_result]
+            if (variable_type != dataType.STATEMENT){
+                variables[name] = [variable_type, operation_result]
+            }
             break;
 
         case opType.VAR_PRINT :
@@ -322,7 +373,13 @@ function evalInstruction(expr, variables, loops, pointer, instructions, output){
             }
             else if ( isString(name)){
                 output = output + name.substr(1,name.length-2);
-            }else{
+            }
+            else if (isNumber(name)){
+                output = output 
+                       + Number(angka_to_number(
+                            name.substr(1,name.length-2)));
+            }
+            else{
                 var variable = variables[name];
                 if (variable[0] == dataType.STATEMENT){
                     output = output + evalStatement(name);
@@ -356,6 +413,12 @@ function evalInstruction(expr, variables, loops, pointer, instructions, output){
             pointer = loops.pop()[0];
             break;
 
+        case opType.LOOP_BREAK :
+            change_pointer = true;
+            pointer = findLoopExit(pointer,instructions)+1;
+            loops.pop();
+            break;
+
         default:
             throw "cannot evaluate "+op;
     }
@@ -380,7 +443,7 @@ function interpret(variables,output,input){
 
     var pointer = 0;
     var instruction_length = instructions.length;
-    var i = 0;
+    // var i = 0;
     try{
         while (pointer < instruction_length){
             var evaluated = evalInstruction(instructions[pointer],
@@ -397,8 +460,8 @@ function interpret(variables,output,input){
             }
             // console.log(pointer);
             // console.log(variables);
-            i = i+1;
-            if(i>100){break;}
+            // i = i+1;
+            // if(i>100){break;}
         }
     }catch (err) {
         throw "on statement " +String(Number(i)+1)+" : "+err;
@@ -415,6 +478,9 @@ var variables = {}; //debug purposes
 function runCode(input){
     // var variables = {}; //comment for debug only
     variables = {};
+    //default boolean
+    variables["ꦧꦼꦤꦼꦂ"] = [dataType.STATEMENT, "꧇꧐꧇", compType.EQUAL, "꧇꧐꧇"];
+    variables["ꦱꦭꦃ"] = [dataType.STATEMENT, "꧇꧐꧇", compType.EQUAL, "꧇꧑꧇"];
     var blocks    = {};
     var output    = "";
     var interpreted;

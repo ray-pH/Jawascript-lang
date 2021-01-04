@@ -14,16 +14,32 @@
 <body>
     <div id="container">
         <div class="top-bar">
-            <img src="./icon/favicon-96x96.png" width="64"
-            style="border-radius: 10%; vertical-align: middle;" />
-            ꦗꦮꦱ꧀ꦏꦿꦶꦥ꧀
+            <div class=left-top>
+                <img src="./icon/favicon-96x96.png" width="64"
+                style="border-radius: 10%; vertical-align: middle;" />
+                ꦗꦮꦱ꧀ꦏꦿꦶꦥ꧀
+            </div>
+            <div class="right-top">
+                <a class="top-link" target=”_blank” href="https://github.com/ray-pH/Jawascript-lang/">GitHub</a>
+                <a class="top-link" target=”_blank” href="https://github.com/ray-pH/Jawascript-lang/wiki/Quick-Guide">Wiki</a>
+            </div>
         </div>
         <div align="center">
             <textarea class="input" id="input" rows="5" style="padding:10px"></textarea>
-        </div><br>
+        </div>
         <div class="buttondiv">
-            <button type="button" class="button" onclick="runButton()">Run</button>
-        </div><br>
+            <div class=left-button>
+                <button type="button" class="runbutton" onclick="runButton()">Run</button>
+                <input type="checkbox" id="button_angka" name="button_angka" value="Bike">
+                <label for="button_angka"> Angka Jawa </label><br>
+            </div>
+            <div class=right-button>
+                <button type="button" class="rightbutton" onclick="saveFile()">Save</button>
+                <button type="button" class="rightbutton" id="btnAttachment" onclick="openAttachment()">Load</button>
+                <button type="button" class="rightbutton" onclick="helpEdit()">Help</button>
+            </div>
+        </div><br><br><br>
+        <input type="file" class="file" id="attachment" style="display: none;" onchange="fileSelected(this)"/>
         <div align="left" id="output" class="output"> </div>
     </div>
 </body>
@@ -32,7 +48,49 @@
     function runButton(){
         var input  = document.getElementById("input");
         var output = document.getElementById("output");
-        output.innerHTML = runCode(input.value).replace(/(\r\n|\r|\n)/g, "<br>");
+        var button = document.getElementById("button_angka")
+        var result = runCode(input.value).replace(/(\r\n|\r|\n)/g, "<br>");
+        if (button.checked){
+            output.innerHTML = number_to_angka(result).replace(/(\s)/g," ꧇ ");
+        }else{
+            output.innerHTML = result;
+        }
+    }
+
+    function download(filename, text) {
+        var pom = document.createElement('a');
+        pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+        pom.setAttribute('download', filename);
+
+        if (document.createEvent) {
+            var event = document.createEvent('MouseEvents');
+            event.initEvent('click', true, true);
+            pom.dispatchEvent(event);
+        }
+        else {
+            pom.click();
+        }
+    }
+
+    function saveFile(){
+        download('filename.jj', document.getElementById("input").value+"\n");
+    }
+
+    function openAttachment() {
+        document.getElementById('attachment').click();
+    }
+
+    function fileSelected(input){
+        document.getElementById('btnAttachment').value = "File: " + input.files[0].name
+        var fileToLoad = document.getElementById("attachment").files[0];
+
+        var fileReader = new FileReader();
+        fileReader.onload = function(fileLoadedEvent){
+            var textFromFileLoaded = fileLoadedEvent.target.result;
+            document.getElementById("input").value = textFromFileLoaded;
+        };
+
+        fileReader.readAsText(fileToLoad, "UTF-8");
     }
 </script>
 
@@ -43,13 +101,36 @@
         font-family: 'Noto Sans';
     }
     .top-bar{
-        font-family: 'Noto Sans Javanese';
-        font-size: 30px;
         margin-top: 15px;
-        margin-bottom: 15px;
+        /*margin-bottom: 15px;*/
         /*margin-left : 100px;*/
     }
+    .left-top{
+        font-family: 'Noto Sans Javanese';
+        font-size: 30px;
+        float: left;
+    }
+    .right-top{
+        float: right;
+        margin-top: 20px;
+    }
+    .top-link{
+        /*background-color:#F7DF1D;*/
+        padding: 10px;
+        text-decoration: none;
+        color: black;
+        font-family: 'Noto Sans';
+        font-weight: bold;
+        font-size: 14px;
+        border-radius: 20%;
+        margin-left: 10px;
+    }
+    .top-link:hover{
+        /*background-color:#D5CD1B;*/
+        background-color:#F7DF1D;
+    }
     .input{
+        margin-top: 15px;
         font-size:24px;
         font-family: 'Noto Sans Javanese', 'Noto Sans';
         width : 100%;
@@ -57,7 +138,16 @@
     .output{
         font-size:20px;
     }
-    .button{
+    .buttondiv{
+        margin-top: 10px;
+    }
+    .left-button{
+        float: left;
+    }
+    .right-button{
+        float: right;
+    }
+    .runbutton{
         background-color: #F7DF1D; /* Green */
         border: none;
         color: black;
@@ -68,8 +158,14 @@
         font-size: 18px;
         border-radius: 20%;
     }
-    .button:hover{
+    .runbutton:hover{
          background-color: #D5CD1B;
+    }
+    #button_angka{
+        margin-left: 15px;
+    }
+    .rightbutton{
+
     }
 </style>
 
