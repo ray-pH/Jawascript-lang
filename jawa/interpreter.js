@@ -1,6 +1,5 @@
-var variables = {};
-var blocks    = {};
-var output    = "";
+// var variables = {};
+// var output    = "";
 
 const dataType = {
     NUMBER    : "number",
@@ -22,10 +21,13 @@ const opType = {
     VAR_SET     : "Set value for variable",
     VAR_SETDEC  : "Declare and set variable",
     VAR_OPERATE : "Operate on variable",
-    VAR_PRINT   : "Print value of variable"
+    VAR_PRINT   : "Print value of variable",
+    LOOP_START  : "Beginning of a loop",
+    LOOP_END    : "End of a loop"
 }
 
 const varOpType = {
+    SET : "set",
     ADD : "add",
     SUB : "sub",
     MUL : "mul",
@@ -62,7 +64,7 @@ function isString(str){
 }
 
 function parseLine(line){
-    
+    line = line.replace(/^[\t\s]+/g, "");
     // variable declaration
     if ((/^(ꦮꦺꦴꦤ꧀ꦠꦼꦤ꧀|ꦲꦤ).*꧈(ꦤꦶꦏꦸ|ꦲꦶꦏꦸ)/g).test(line)) {
         var declength = 0;
@@ -110,6 +112,10 @@ function parseLine(line){
             operation = varOpType.SUB;
             operand   = tooperate.substr(5);
         }
+        else if ((/^ꦥꦝꦏ꧀ꦏꦺ/g).test(tooperate)){ //sub
+            operation = varOpType.SET;
+            operand   = tooperate.substr(6);
+        }
         return  [opType.VAR_OPERATE, name, [operation, operand]];
     }
 
@@ -120,6 +126,15 @@ function parseLine(line){
 
     else if ( (/^(ꦒ|ꦧ)ꦫꦶꦱ꧀ꦲꦚꦂ$/g).test(line) ) {
         return [opType.VAR_PRINT, "newline"];
+    }
+
+    else if ( (/^ꦤꦭꦶꦏꦠꦏ꧀ꦱꦶꦃ/g).test(line) ){
+        var stat = line.substr(10);
+        return [opType.LOOP_START, stat];
+    }
+
+    else if ( (/^ꦢꦶꦭꦏꦺꦴ(ꦏ꧀ꦲꦏꦺ|ꦏ꧀ꦏꦺ|ꦤꦶ)$/g).test(line) ){
+        return [opType.LOOP_END];
     }
 
     else {
@@ -141,7 +156,7 @@ function evalStatement(varname){
 
     if (isNumber(v1n)) { 
         t1 = dataType.NUMBER; 
-        v1 = Number(v1n);
+        v1 = Number(angka_to_number(v1n.substr(1,v1n.length-2)));
     }
     else if (isString(v1n)) { 
         t1 = dataType.STRING; 
@@ -153,7 +168,7 @@ function evalStatement(varname){
     }
     if (isNumber(v2n)) { 
         t2 = dataType.NUMBER; 
-        v2 = Number(v2n);
+        v2 = Number(angka_to_number(v2n.substr(1,v2n.length-2)));
     }
     else if (isString(v2n)) { 
         t2 = dataType.STRING; 
@@ -167,7 +182,6 @@ function evalStatement(varname){
     if (t1 != t2){
         throw "comparison of different types";
     }
-
     if (comp_type == compType.GREATER){
         state = v1 > v2;
     }
@@ -181,10 +195,32 @@ function evalStatement(varname){
     return state;
 }
 
-function evalParsed(expr){
+function findLoopExit(current_pointer, instructions){
+    var instruction_length = instructions.length;
+    var depth = 0;
+    for (var i = current_pointer+1; i<instruction_length; i++){
+        var type = instructions[i][0];
+        if (type == opType.LOOP_START){
+            depth += 1;
+        }
+        else if (type == opType.LOOP_END){
+            if(depth == 0){
+                return i;
+            }else{
+                depth -= 1;
+            }
+        }
+    }
+    throw "loop have no exit point at pointer " + current_pointer;
+    return instructions_length;
+}
+
+function evalInstruction(expr, variables, loops, pointer, instructions, output){
     var op    = expr[0];
     var name  = expr[1];
     var value = expr[2];
+
+    var change_pointer = false;
 
     switch (op) {
         case opType.VAR_DECLARE :
@@ -242,7 +278,6 @@ function evalParsed(expr){
             if (initial_variable == undefined){
                 throw "error undefined variable : " + name;
             }
-
             var operation = value[0];
             var operand   = value[1];
             var operand_val;
@@ -251,7 +286,7 @@ function evalParsed(expr){
             }else{
                 var operand_variable = variables[operand];
                 if (operand_variable == undefined){
-                    throw "undefined variable : " + operand;
+                    throw "undefined variable to operate : " + operand;
                 }
                 operand_val = operand_variable[1];
             }
@@ -270,6 +305,9 @@ function evalParsed(expr){
                     break;
                 case varOpType.SUB:
                     operation_result = initial_value - operand_val;
+                    break;
+                case varOpType.SET:
+                    operation_result = operand_val;
                     break;
                 default:
                     throw "undefined operand : " + operation;
@@ -294,37 +332,96 @@ function evalParsed(expr){
             }
             break;
 
+        case opType.LOOP_START :
+            var statement_variable = variables[name];
+            if (statement_variable == undefined){
+                throw "unknown statement variable" + name;
+                break;
+            }
+            var stat = evalStatement(name);
+            loops.push([pointer, name]);
+            if(!stat){
+                change_pointer = true;
+                pointer = findLoopExit(pointer,instructions)+1;
+                loops.pop();
+            };
+            break;
+
+        case opType.LOOP_END :
+            if (loops.length < 1){
+                throw "loop end point exist without start point";
+                break;
+            }
+            change_pointer = true;
+            pointer = loops.pop()[0];
+            break;
+
         default:
             throw "cannot evaluate "+op;
     }
+
+    return [variables,loops,output,change_pointer,pointer];
 }
 
-function interpret(input){
+function interpret(variables,output,input){
     var raw    = input.replace(/[\n\r]/gm, "") // remove newline
                       .split("꧉")              // split by delim
                       .filter(Boolean);        // filter out emptystring
-    var parsed = [];
+    var instructions = [];
+    var loops = [];
     try{
         for (var i in raw){
-            parsed.push(parseLine(raw[i]));
-        }
-        for (var i in parsed){
-            evalParsed(parsed[i]);
+            instructions.push(parseLine(raw[i]));
         }
     }catch (err) {
-        throw "on line " +String(Number(i)+1)+" : "+err;
+        throw "on statement " +String(Number(i)+1)+" : "+err;
+    }
+    console.log(instructions); //debug
+
+    var pointer = 0;
+    var instruction_length = instructions.length;
+    var i = 0;
+    try{
+        while (pointer < instruction_length){
+            var evaluated = evalInstruction(instructions[pointer],
+                                            variables,loops,pointer,
+                                            instructions,output);
+            variables = evaluated[0];
+            loops     = evaluated[1];
+            output    = evaluated[2];
+            change_pointer = evaluated[3];
+            if(change_pointer){
+                pointer = evaluated[4];
+            }else{
+               pointer = pointer+1;
+            }
+            // console.log(pointer);
+            // console.log(variables);
+            i = i+1;
+            if(i>100){break;}
+        }
+    }catch (err) {
+        throw "on statement " +String(Number(i)+1)+" : "+err;
     }
 
-    console.log(raw);      //debug purposes
-    console.log(parsed);
+
+
+    // console.log(raw);      //debug purposes
+    
+    return [variables,output];
 };
 
+var variables = {}; //debug purposes
 function runCode(input){
+    // var variables = {}; //comment for debug only
     variables = {};
-    blocks    = {};
-    output    = "";
+    var blocks    = {};
+    var output    = "";
+    var interpreted;
     try {
-        interpret(input);
+        interpreted = interpret(variables,output,input);
+        variables = interpreted[0];
+        output    = interpreted[1];
     }catch(err){
         output = "Error\n" + err;
     }
