@@ -292,7 +292,7 @@ function evalInstruction(expr, variables, loops, pointer, instructions, output){
                     comparison = compType.EQUAL;
                     to_compare = value.split("ꦥꦝꦏꦫꦺꦴ");
                 }
-                else if ( (/.+ꦲꦺꦴꦫ.+/g).test(value) ){
+                else if ( (/ꦲꦺꦴꦫ.+/g).test(value) ){
                     comparison = compType.NOT;
                     to_compare = value.split("ꦲꦺꦴꦫ");
                 }

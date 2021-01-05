@@ -156,6 +156,7 @@ var special_case_regex = [
     [/ꦟ꧀Y/g, "ꦘ"], //NY
     [/ꦠ꧀ꦃ/g,  "ꦛ꧀"], //th
     [/ꦤ꧀ꦒ꧀/g,  "ꦁ"],  //ng
+    [/ꦤ꧀ꦒ/g, "ꦔ"], //nga
     [/꧀ꦫ/g,   "ꦿ"],  //cakra
     [/ꦿꦼ/g,     "ꦽ"],  //keret
     [/꧀ꦫꦪ/g,"ꦾ"], //pengkal
