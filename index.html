@@ -9,10 +9,15 @@
     <script src="jawa/interpreter.js"></script>
     <link href='https://fonts.googleapis.com/css?family=Noto Sans' rel='stylesheet'>
     <link rel="stylesheet" href="font/noto-javanese.css" type="text/css" charset="utf-8" />
+    <meta property="og:image" content="https://raw.githubusercontent.com/ray-pH/Jawascript-lang/main/icon/favicon-96x96.png" />
+    <meta property="og:description" content="Jawascript (ꦗꦮꦱ꧀ꦏꦿꦶꦥ꧀) is a simple programming language that uses aksara jawa (ꦲꦏ꧀ꦱꦫꦗꦮ)" />
+    <meta property="og:url"content="https://ray-ph.github.io/Jawa/" />
+    <meta property="og:title" content="Jawascript : ꦗꦮꦱ꧀ꦏꦿꦶꦥ꧀" />
 </head>
 
 <body>
     <div id="container">
+        
         <div class="top-bar">
             <div class=left-top>
                 <img src="./icon/favicon-96x96.png" width="64"
@@ -24,9 +29,11 @@
                 <a class="top-link" target=”_blank” href="https://github.com/ray-pH/Jawascript-lang/wiki/Quick-Guide">Wiki</a>
             </div>
         </div>
+
         <div align="center">
             <textarea class="input" id="input" rows="5" style="padding:10px"></textarea>
         </div>
+
         <div class="buttondiv">
             <div class=left-button>
                 <button type="button" class="runbutton" onclick="runButton()">Run</button>
@@ -36,11 +43,45 @@
             <div class=right-button>
                 <button type="button" class="rightbutton" onclick="saveFile()">Save</button>
                 <button type="button" class="rightbutton" id="btnAttachment" onclick="loadFile()">Load</button>
-                <button type="button" class="rightbutton" onclick="helpEdit()">Help</button>
+                <button type="button" class="rightbutton" id="helpButton" onclick="helpEdit()">Help</button>
             </div>
-        </div><br><br><br>
+        </div>
+
+        <br><br><br>
+
         <input type="file" class="file" id="attachment" style="display: none;" onchange="fileSelected(this)"/>
         <div align="left" id="output" class="output"> </div>
+
+        <div id="helpContainer" class="help-container">
+
+            <div class="help-content">
+                <span class="help-close">&times;</span>
+                <p>To write in aksara jawa, just type in latin and the editor will convert it automatically. Aksara murda can be written using capital letters for example <code>NY</code>will become ꦘ.</p>
+                <p>For 'vowels' sounds, there are <code>a i u e é o</code>, and to write <code>é</code> you can type <code>'e</code>
+                <p>Other special characters that are available are</p>
+                <table class="pada-table">
+                    <tr>
+                        <td><b>Name</b></td>
+                        <td><b>Character</b></td>
+                        <td><b>what to type</b></td>
+                    </tr>
+                    <tr><td>Lingsa</td>
+                        <td>꧈</td><td>,</td></tr>
+                    <tr><td>Lungsi</td>
+                        <td>꧉</td><td>.</td></tr>
+                    <tr><td>Pangkat</td>
+                        <td>꧇</td><td>:</td></tr>
+                    <tr><td>Adeg</td>
+                        <td>꧊</td><td>"</td></tr>
+                    <tr><td>Piseleh Kiwa</td>
+                        <td>꧌</td><td>[</td></tr>
+                    <tr><td>Piseleh Tengen</td>
+                        <td>꧍</td><td>]</td></tr>
+                </table>
+            </div>
+
+        </div>
+
     </div>
 </body>
 
@@ -92,9 +133,37 @@
 
         fileReader.readAsText(fileToLoad, "UTF-8");
     }
+
+    var modal = document.getElementById("helpContainer");
+    document.getElementById("helpButton").onclick = function() {
+        modal.style.display = "block";
+    }
+    document.getElementsByClassName("help-close")[0].onclick = function() {
+        modal.style.display = "none";
+    }
+    window.onclick = function(event) {
+        if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
 </script>
 
 <style>
+    code{
+        font-size:14px;
+        margin-left: 2px;
+        margin-right: 2px;
+        padding: 2px 5px 2px 5px;
+        background-color: #EEEEEE;
+        border-radius: 20%;
+    }
+    .pada-table td{
+        text-align: center;
+        background-color: #EEEEEE;
+        padding: 2px 10px 2px 10px;
+        border-radius: 20%;
+        margin-top: 5px;
+    }
     #container{
         margin: auto;
         width : 80%;
@@ -134,6 +203,9 @@
         font-size:24px;
         font-family: 'Noto Sans Javanese', 'Noto Sans';
         width : 100%;
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
     }
     .output{
         font-size:20px;
@@ -160,12 +232,61 @@
     }
     .runbutton:hover{
          background-color: #D5CD1B;
+         cursor: pointer;
     }
     #button_angka{
         margin-left: 15px;
     }
     .rightbutton{
+        /*background-color: transparent;*/
+        background-color: #F2F2F2;
+        /*border: none;*/
+        border-radius: 20%;
+        font-family: 'Noto Sans';
+        font-weight: bold;
+        border: 2px solid black;
+        padding: 3px 12px 3px 12px;
+        margin-left: 10px;
+    }
+    .rightbutton:hover{
+        /*background-color: #F7DF1D;*/
+         background-color: #D2D2D2;
+         border-color: #777777;
+         cursor: pointer;
+    }
 
+    .help-container {
+          display: none;
+          position: fixed;
+          z-index: 1;
+          padding-top: 50px;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          overflow: auto;
+          background-color: #00000066;
+    }
+
+    .help-content {
+        background-color: #FEFEFE;
+        margin: auto;
+        padding: 30px;
+        border: 1px solid #888;
+        width: 80%;
+    }
+    .help-close {
+        color: #AAAAAA;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .help-close:hover,
+    .help-close:focus {
+        color: #000;
+        text-decoration: none;
+        cursor: pointer;
     }
 </style>
 
