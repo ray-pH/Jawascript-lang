@@ -3,7 +3,7 @@
 # Jawascript
 
 
-random fun project, simple programming language in aksara jawa. \
+random fun project, simple programming language in aksara jawa. 
 
 [Try It Yourself](https://ray-ph.github.io/Jawa/)\
 [Wiki](https://github.com/ray-pH/Jawascript-lang/wiki/Quick-Guide)
